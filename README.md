@@ -41,8 +41,8 @@ User Question → Embed → Similarity Search → Build Prompt → LLM → Answe
 ### 1. Clone the repository
 
 ```bash
-git clone <your-repo-url>
-cd basic-rag
+[git clone https://github.com/ayushgoyal9991/ai-tools.git]
+git checkout basic-rag
 ```
 
 ### 2. Pull the required Ollama models
@@ -103,8 +103,6 @@ mvn clean install
 Make sure Ollama is running, then start the app:
 
 ```bash
-# Set heap size to avoid OOM on large files
-export MAVEN_OPTS="-Xms512m -Xmx2g"
 mvn spring-boot:run
 ```
 
@@ -229,15 +227,3 @@ Make sure Ollama is running and both models are pulled:
 ollama list
 curl http://localhost:11434
 ```
-
----
-
-## What to Try Next
-
-Once the basic pipeline is working, here are good next steps to explore:
-
-- **Score threshold** — reject chunks with similarity below 0.7
-- **Source citation** — return which file/chunk the answer came from
-- **Conversation history** — pass previous Q&As into the prompt
-- **Persistent vector store** — swap in-memory store for ChromaDB
-- **Semantic chunking** — split by topic instead of character count
