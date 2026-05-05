@@ -2,6 +2,7 @@ package com.rag.generation;
 
 import com.rag.model.DocumentChunk;
 import com.rag.retrieval.InMemoryVectorStore;
+import com.rag.retrieval.PgVectorStore;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -13,11 +14,12 @@ import java.util.stream.Collectors;
 @Service
 public class RagService {
     private final EmbeddingModel embeddingModel;
-    private final InMemoryVectorStore vectorStore;
+//    private final InMemoryVectorStore vectorStore;
+    private final PgVectorStore vectorStore;
     private final ChatModel chatModel;
 
     public RagService(EmbeddingModel embeddingModel,
-                      InMemoryVectorStore vectorStore,
+                      PgVectorStore vectorStore,
                       ChatModel chatModel) {
         this.embeddingModel = embeddingModel;
         this.vectorStore = vectorStore;

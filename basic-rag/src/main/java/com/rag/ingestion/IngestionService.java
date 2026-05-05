@@ -2,6 +2,7 @@ package com.rag.ingestion;
 
 import com.rag.model.DocumentChunk;
 import com.rag.retrieval.InMemoryVectorStore;
+import com.rag.retrieval.PgVectorStore;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
@@ -22,11 +23,12 @@ public class IngestionService {
 
     private final TextChunker chunker;
     private final EmbeddingModel embeddingModel;
-    private final InMemoryVectorStore vectorStore;
+//    private final InMemoryVectorStore vectorStore;
+    private final PgVectorStore vectorStore;
 
     public IngestionService(TextChunker chunker,
                             EmbeddingModel embeddingModel,
-                            InMemoryVectorStore vectorStore) {
+                            PgVectorStore vectorStore) {
         this.chunker = chunker;
         this.embeddingModel = embeddingModel;
         this.vectorStore = vectorStore;
