@@ -14,18 +14,55 @@ import java.util.List;
 public interface DocumentChunkRepository extends JpaRepository<DocumentChunkEntity, String> {
 
     // Similarity search — cast text to vector at query time
+//    @Query(value = """
+//            SELECT id, content, source, embedding::text
+//            FROM document_chunks
+//            ORDER BY embedding::vector <=> CAST(:embedding AS vector)
+//            LIMIT :topK
+//            """, nativeQuery = true)
+//    List<DocumentChunkEntity> findTopKBySimilarity(
+//            @Param("embedding") String embedding,
+//            @Param("topK") int topK
+//    );
+
+//    @Query(value = """
+//        SELECT id, content, source, embedding::text,
+//               1 - (embedding::vector <=> CAST(:embedding AS vector)) AS score
+//        FROM document_chunks
+//        ORDER BY embedding::vector <=> CAST(:embedding AS vector)
+//        LIMIT :topK
+//        """, nativeQuery = true)
+//    List<Object[]> findTopKBySimilarity(
+//            @Param("embedding") String embedding,
+//            @Param("topK") int topK
+//    );
+//
+//    // Insert with explicit vector cast
+//    @Modifying
+//    @Transactional
+//    @Query(value = """
+//            INSERT INTO document_chunks (id, content, source, embedding)
+//            VALUES (:id, :content, :source, CAST(:embedding AS vector))
+//            """, nativeQuery = true)
+//    void insertWithVector(
+//            @Param("id") String id,
+//            @Param("content") String content,
+//            @Param("source") String source,
+//            @Param("embedding") String embedding
+//    );
+
     @Query(value = """
-            SELECT id, content, source, embedding::text
+            SELECT id, content, source, embedding::text,
+                   1 - (embedding <=> CAST(:embedding AS vector)) AS score
             FROM document_chunks
-            ORDER BY embedding::vector <=> CAST(:embedding AS vector)
+            ORDER BY embedding <=> CAST(:embedding AS vector)
             LIMIT :topK
             """, nativeQuery = true)
-    List<DocumentChunkEntity> findTopKBySimilarity(
+    List<Object[]> findTopKBySimilarity(
             @Param("embedding") String embedding,
             @Param("topK") int topK
     );
 
-    // Insert with explicit vector cast
     @Modifying
     @Transactional
     @Query(value = """

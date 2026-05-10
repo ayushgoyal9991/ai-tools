@@ -3,6 +3,8 @@ package com.rag.api;
 import com.rag.generation.RagService;
 import com.rag.ingestion.IngestionService;
 import com.rag.model.AskRequest;
+import com.rag.model.AskResponse;
+import com.rag.model.RagResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.http.MediaType;
@@ -44,13 +46,11 @@ public class RagController {
 
     @Operation(summary = "Ask a question", description = "Query the ingested documents using RAG")
     @PostMapping("/ask")
-    public ResponseEntity<Map<String, String>> ask(@RequestBody AskRequest body) {
-        String question = body.question();
-        if (question == null || question.isBlank()) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "question field is required"));
+    public ResponseEntity<AskResponse> ask(@RequestBody AskRequest request) {
+        if (request.question() == null || request.question().isBlank()) {
+            return ResponseEntity.badRequest().build();
         }
-        String answer = ragService.ask(question);
-        return ResponseEntity.ok(Map.of("answer", answer));
+        RagResponse response = ragService.ask(request.question());
+        return ResponseEntity.ok(new AskResponse(response.answer(), response.sources()));
     }
 }

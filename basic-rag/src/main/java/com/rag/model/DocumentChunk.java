@@ -4,5 +4,6 @@ public record DocumentChunk(
         String id,
         String content,
         String source,
-        float[] embedding
+        float[] embedding,
+        double score
 ) {}

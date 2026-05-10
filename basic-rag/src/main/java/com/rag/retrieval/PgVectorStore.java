@@ -32,12 +32,19 @@ public class PgVectorStore {
         chunks.forEach(this::add);
     }
 
-    public List<DocumentChunk> similaritySearch(float[] queryEmbedding) {
-        return repository.findTopKBySimilarity(toVectorString(queryEmbedding), topK)
-                .stream()
-                .map(this::toDomain)
-                .toList();
-    }
+//    public List<DocumentChunk> similaritySearch(float[] queryEmbedding) {
+//        return repository.findTopKBySimilarity(toVectorString(queryEmbedding), topK)
+//                .stream()
+//                .map(this::toDomain)
+//                .toList();
+//    }
+public List<DocumentChunk> similaritySearch(float[] queryEmbedding) {
+    String vectorString = toVectorString(queryEmbedding);
+    return repository.findTopKBySimilarity(vectorString, topK)
+            .stream()
+            .map(this::toDomainWithScore)
+            .toList();
+}
 
     public void clear() {
         repository.deleteAll();
@@ -57,21 +64,52 @@ public class PgVectorStore {
         return sb.toString();
     }
 
+    private DocumentChunk toDomainWithScore(Object[] row) {
+        String id       = (String) row[0];
+        String content  = (String) row[1];
+        String source   = (String) row[2];
+        String embText  = (String) row[3];
+        double score    = ((Number) row[4]).doubleValue();
+
+        float[] embedding = parseEmbedding(embText);
+        return new DocumentChunk(id, content, source, embedding, score);
+    }
+
+//    private DocumentChunk toDomain(DocumentChunkEntity entity) {
+//        // Parse the text embedding back to float[]
+//        String raw = entity.getEmbedding()
+//                .replace("[", "")
+//                .replace("]", "");
+//        String[] parts = raw.split(",");
+//        float[] embedding = new float[parts.length];
+//        for (int i = 0; i < parts.length; i++) {
+//            embedding[i] = Float.parseFloat(parts[i].trim());
+//        }
+//        return new DocumentChunk(
+//                entity.getId(),
+//                entity.getContent(),
+//                entity.getSource(),
+//                embedding
+//        );
+//    }
+
     private DocumentChunk toDomain(DocumentChunkEntity entity) {
-        // Parse the text embedding back to float[]
-        String raw = entity.getEmbedding()
-                .replace("[", "")
-                .replace("]", "");
-        String[] parts = raw.split(",");
-        float[] embedding = new float[parts.length];
-        for (int i = 0; i < parts.length; i++) {
-            embedding[i] = Float.parseFloat(parts[i].trim());
-        }
         return new DocumentChunk(
                 entity.getId(),
                 entity.getContent(),
                 entity.getSource(),
-                embedding
+                entity.getEmbedding(),  // float[] directly, no parsing needed
+                0.0
         );
+    }
+
+    private float[] parseEmbedding(String raw) {
+        String cleaned = raw.replace("[", "").replace("]", "");
+        String[] parts = cleaned.split(",");
+        float[] embedding = new float[parts.length];
+        for (int i = 0; i < parts.length; i++) {
+            embedding[i] = Float.parseFloat(parts[i].trim());
+        }
+        return embedding;
     }
 }

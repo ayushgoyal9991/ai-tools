@@ -52,7 +52,8 @@ public class IngestionService {
                         UUID.randomUUID().toString(),
                         chunkContent,
                         file.getOriginalFilename(),
-                        embedding
+                        embedding,
+                        0.0
                 ));
             }
 
