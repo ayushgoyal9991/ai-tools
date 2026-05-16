@@ -1,6 +1,7 @@
 package com.rag.api;
 
 import com.rag.generation.RagService;
+import com.rag.history.ConversationHistory;
 import com.rag.ingestion.IngestionService;
 import com.rag.model.AskRequest;
 import com.rag.model.AskResponse;
@@ -20,10 +21,12 @@ import java.util.Map;
 public class RagController {
     private final IngestionService ingestionService;
     private final RagService ragService;
+    private final ConversationHistory conversationHistory;
 
-    public RagController(IngestionService ingestionService, RagService ragService) {
+    public RagController(IngestionService ingestionService, RagService ragService, ConversationHistory conversationHistory) {
         this.ingestionService = ingestionService;
         this.ragService = ragService;
+        this.conversationHistory = conversationHistory;
     }
 
     @Operation(summary = "Ingest a document", description = "Upload a PDF or TXT file")
@@ -50,7 +53,18 @@ public class RagController {
         if (request.question() == null || request.question().isBlank()) {
             return ResponseEntity.badRequest().build();
         }
-        RagResponse response = ragService.ask(request.question());
-        return ResponseEntity.ok(new AskResponse(response.answer(), response.sources()));
+        RagResponse response = ragService.ask(request.question(), request.clearHistory());
+        return ResponseEntity.ok(new AskResponse(
+                response.answer(),
+                response.sources(),
+                response.originalQuestion(),
+                response.rewrittenQuery()
+        ));
+    }
+
+    @DeleteMapping("/history")
+    public ResponseEntity<Void> clearHistory() {
+        conversationHistory.clear();
+        return ResponseEntity.ok().build();
     }
 }

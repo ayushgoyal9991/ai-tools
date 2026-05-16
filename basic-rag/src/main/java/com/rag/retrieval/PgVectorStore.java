@@ -5,7 +5,10 @@ import com.rag.model.DocumentChunkEntity;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class PgVectorStore {
@@ -14,6 +17,15 @@ public class PgVectorStore {
 
     @Value("${rag.top-k:3}")
     private int topK;
+
+    @Value("${rag.keyword.threshold:0.1}")
+    private double keywordThreshold;
+
+    @Value("${rag.vector.weight:0.7}")
+    private double vectorWeight;
+
+    @Value("${rag.keyword.weight:0.3}")
+    private double keywordWeight;
 
     public PgVectorStore(DocumentChunkRepository repository) {
         this.repository = repository;
@@ -45,6 +57,64 @@ public List<DocumentChunk> similaritySearch(float[] queryEmbedding) {
             .map(this::toDomainWithScore)
             .toList();
 }
+
+    // Hybrid search — vector + keyword combined
+    public List<DocumentChunk> hybridSearch(float[] queryEmbedding, String queryText) {
+        // Run both searches
+        List<DocumentChunk> vectorResults = repository
+                .findTopKBySimilarity(toVectorString(queryEmbedding), topK)
+                .stream()
+                .map(this::toDomainWithScore)
+                .toList();
+
+        List<DocumentChunk> keywordResults = repository
+                .findTopKByKeyword(queryText, keywordThreshold, topK)
+                .stream()
+                .map(this::toDomainWithScore)
+                .toList();
+
+        // Merge and re-rank using weighted scores
+        // Use LinkedHashMap to deduplicate by chunk id
+        Map<String, DocumentChunk> merged = new LinkedHashMap<>();
+
+        for (DocumentChunk chunk : vectorResults) {
+            merged.put(chunk.id(), new DocumentChunk(
+                    chunk.id(),
+                    chunk.content(),
+                    chunk.source(),
+                    chunk.embedding(),
+                    chunk.score() * vectorWeight
+            ));
+        }
+
+        for (DocumentChunk chunk : keywordResults) {
+            if (merged.containsKey(chunk.id())) {
+                // Chunk found by both — combine scores
+                merged.computeIfPresent(chunk.id(), (k, existing) -> new DocumentChunk(
+                        chunk.id(),
+                        chunk.content(),
+                        chunk.source(),
+                        chunk.embedding(),
+                        existing.score() + (chunk.score() * keywordWeight)
+                ));
+            } else {
+                // Keyword-only result
+                merged.put(chunk.id(), new DocumentChunk(
+                        chunk.id(),
+                        chunk.content(),
+                        chunk.source(),
+                        chunk.embedding(),
+                        chunk.score() * keywordWeight
+                ));
+            }
+        }
+
+        // Sort by combined score descending
+        return merged.values().stream()
+                .sorted(Comparator.comparingDouble(DocumentChunk::score).reversed())
+                .limit(topK)
+                .toList();
+    }
 
     public void clear() {
         repository.deleteAll();

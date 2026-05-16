@@ -51,6 +51,7 @@ public interface DocumentChunkRepository extends JpaRepository<DocumentChunkEnti
 //            @Param("embedding") String embedding
 //    );
 
+    // Vector similarity search
     @Query(value = """
             SELECT id, content, source, embedding::text,
                    1 - (embedding <=> CAST(:embedding AS vector)) AS score
@@ -60,6 +61,21 @@ public interface DocumentChunkRepository extends JpaRepository<DocumentChunkEnti
             """, nativeQuery = true)
     List<Object[]> findTopKBySimilarity(
             @Param("embedding") String embedding,
+            @Param("topK") int topK
+    );
+
+    // Keyword search using pg_trgm similarity
+    @Query(value = """
+            SELECT id, content, source, embedding::text,
+                   similarity(content, :query) AS score
+            FROM document_chunks
+            WHERE similarity(content, :query) > :threshold
+            ORDER BY similarity(content, :query) DESC
+            LIMIT :topK
+            """, nativeQuery = true)
+    List<Object[]> findTopKByKeyword(
+            @Param("query") String query,
+            @Param("threshold") double threshold,
             @Param("topK") int topK
     );
 

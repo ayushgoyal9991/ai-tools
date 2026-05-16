@@ -4,7 +4,9 @@ import java.util.List;
 
 public record RagResponse(
         String answer,
-        List<Source> sources
+        List<Source> sources,
+        String originalQuestion,
+        String rewrittenQuery
 ) {
     public record Source(
             String file,
